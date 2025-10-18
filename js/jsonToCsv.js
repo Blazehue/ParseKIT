@@ -26,8 +26,18 @@ export class JSONToCSVConverter {
      */
     convert(jsonString) {
         try {
+            // Check for empty input
+            if (!jsonString || jsonString.trim().length === 0) {
+                throw new Error('Input is empty');
+            }
+
             // Parse JSON
             const data = JSON.parse(jsonString);
+
+            // Check for circular references
+            if (this.hasCircularReference(data)) {
+                throw new Error('JSON contains circular references which cannot be converted to CSV');
+            }
 
             // Handle different JSON structures
             let csvData;
@@ -42,7 +52,8 @@ export class JSONToCSVConverter {
             return {
                 success: true,
                 data: csvData,
-                rows: csvData.split(this.options.lineEnding).length - 1
+                rows: csvData.split(this.options.lineEnding).length - (this.options.includeHeaders ? 1 : 0),
+                columns: this.getColumnCount(csvData)
             };
 
         } catch (error) {
@@ -185,9 +196,23 @@ export class JSONToCSVConverter {
             return '';
         }
 
+        // Handle special number values
+        if (typeof value === 'number') {
+            if (isNaN(value)) {
+                return 'NaN';
+            }
+            if (!isFinite(value)) {
+                return value > 0 ? 'Infinity' : '-Infinity';
+            }
+            return value.toString();
+        }
+
         // Handle arrays
         if (Array.isArray(value)) {
-            if (this.options.flattenObjects) {
+            if (value.length === 0) {
+                return '[]';
+            }
+            if (this.options.flattenObjects || this.options.handleNestedArrays) {
                 return this.escapeValue(JSON.stringify(value));
             } else {
                 return this.escapeValue(value.join('; '));
@@ -196,6 +221,9 @@ export class JSONToCSVConverter {
 
         // Handle nested objects
         if (typeof value === 'object') {
+            if (Object.keys(value).length === 0) {
+                return '{}';
+            }
             if (this.options.flattenObjects) {
                 return this.escapeValue(JSON.stringify(value));
             } else {
@@ -208,12 +236,7 @@ export class JSONToCSVConverter {
             return value.toString();
         }
 
-        // Handle numbers
-        if (typeof value === 'number') {
-            return value.toString();
-        }
-
-        // Handle strings
+        // Handle strings (including special characters)
         return this.escapeValue(value.toString());
     }
 
@@ -345,5 +368,106 @@ export class JSONToCSVConverter {
         // Primitive value - wrap in object
         return [{ value: data }];
     }
+
+    /**
+     * Check if object has circular references
+     * @param {any} obj - Object to check
+     * @returns {boolean}
+     */
+    hasCircularReference(obj) {
+        const seen = new WeakSet();
+
+        function detect(obj) {
+            if (typeof obj === 'object' && obj !== null) {
+                if (seen.has(obj)) {
+                    return true;
+                }
+                seen.add(obj);
+
+                for (let key in obj) {
+                    if (obj.hasOwnProperty(key) && detect(obj[key])) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        return detect(obj);
+    }
+
+    /**
+     * Get column count from CSV data
+     * @param {string} csvData - CSV string
+     * @returns {number}
+     */
+    getColumnCount(csvData) {
+        const firstLine = csvData.split(this.options.lineEnding)[0];
+        if (!firstLine) return 0;
+        
+        return firstLine.split(this.options.delimiter).length;
+    }
+
+    /**
+     * Handle inconsistent properties across objects
+     * @param {Array} array - Array of objects
+     * @returns {Array} - Normalized array
+     */
+    normalizeObjects(array) {
+        const allKeys = this.extractAllKeys(array);
+        
+        return array.map(item => {
+            const normalized = {};
+            allKeys.forEach(key => {
+                normalized[key] = item.hasOwnProperty(key) ? item[key] : null;
+            });
+            return normalized;
+        });
+    }
+
+    /**
+     * Process large datasets in chunks (for memory efficiency)
+     * @param {Array} array - Large array to process
+     * @param {number} chunkSize - Size of each chunk
+     * @param {Function} callback - Progress callback
+     * @returns {string} - CSV string
+     */
+    convertInChunks(array, chunkSize = 1000, callback = null) {
+        const allKeys = this.options.flattenObjects ? 
+            this.extractFlattenedKeys(array) : 
+            this.extractAllKeys(array);
+        
+        let result = '';
+
+        // Add headers
+        if (this.options.includeHeaders) {
+            result += this.formatRow(allKeys) + this.options.lineEnding;
+        }
+
+        // Process in chunks
+        for (let i = 0; i < array.length; i += chunkSize) {
+            const chunk = array.slice(i, Math.min(i + chunkSize, array.length));
+            
+            chunk.forEach(item => {
+                if (typeof item === 'object' && item !== null) {
+                    const row = allKeys.map(key => {
+                        const value = this.options.flattenObjects ? 
+                            this.getNestedValue(item, key) : 
+                            item[key];
+                        return this.formatValue(value);
+                    });
+                    result += this.formatRow(row) + this.options.lineEnding;
+                }
+            });
+
+            // Progress callback
+            if (callback) {
+                callback(Math.min(i + chunkSize, array.length), array.length);
+            }
+        }
+
+        return result;
+    }
 }
+
 
