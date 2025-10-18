@@ -11,6 +11,10 @@ export class JSONToCSVConverter {
             includeHeaders: options.includeHeaders !== false,
             quoteChar: options.quoteChar || '"',
             flattenObjects: options.flattenObjects !== false,
+            nestingSeparator: options.nestingSeparator || '.',
+            maxNestingDepth: options.maxNestingDepth || 3,
+            handleNestedArrays: options.handleNestedArrays !== false,
+            customHeaders: options.customHeaders || null,
             ...options
         };
     }
@@ -76,22 +80,29 @@ export class JSONToCSVConverter {
      * @returns {string} - CSV string
      */
     convertArrayOfObjects(array) {
-        // Extract all unique keys
-        const allKeys = this.extractAllKeys(array);
+        // Extract all unique keys (potentially flattened)
+        const allKeys = this.options.flattenObjects ? 
+            this.extractFlattenedKeys(array) : 
+            this.extractAllKeys(array);
         
+        // Use custom headers if provided
+        const headers = this.options.customHeaders || allKeys;
+
         // Build CSV rows
         const rows = [];
 
         // Add header row
         if (this.options.includeHeaders) {
-            rows.push(this.formatRow(allKeys));
+            rows.push(this.formatRow(headers));
         }
 
         // Add data rows
         array.forEach(item => {
             if (typeof item === 'object' && item !== null) {
                 const row = allKeys.map(key => {
-                    const value = item[key];
+                    const value = this.options.flattenObjects ? 
+                        this.getNestedValue(item, key) : 
+                        item[key];
                     return this.formatValue(value);
                 });
                 rows.push(this.formatRow(row));
@@ -249,4 +260,90 @@ export class JSONToCSVConverter {
     updateOptions(options) {
         this.options = { ...this.options, ...options };
     }
+
+    /**
+     * Extract flattened keys from array of objects (supports nested objects)
+     * @param {Array} array - Array of objects
+     * @returns {Array} - Flattened keys
+     */
+    extractFlattenedKeys(array) {
+        const keysSet = new Set();
+
+        array.forEach(item => {
+            if (typeof item === 'object' && item !== null) {
+                this.extractKeysRecursive(item, '', keysSet);
+            }
+        });
+
+        return Array.from(keysSet);
+    }
+
+    /**
+     * Recursively extract keys from nested objects
+     * @param {Object} obj - Object to extract keys from
+     * @param {string} prefix - Key prefix for nesting
+     * @param {Set} keysSet - Set to store keys
+     * @param {number} depth - Current nesting depth
+     */
+    extractKeysRecursive(obj, prefix, keysSet, depth = 0) {
+        if (depth >= this.options.maxNestingDepth) {
+            keysSet.add(prefix);
+            return;
+        }
+
+        Object.keys(obj).forEach(key => {
+            const fullKey = prefix ? `${prefix}${this.options.nestingSeparator}${key}` : key;
+            const value = obj[key];
+
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                this.extractKeysRecursive(value, fullKey, keysSet, depth + 1);
+            } else {
+                keysSet.add(fullKey);
+            }
+        });
+    }
+
+    /**
+     * Get nested value from object using dot notation
+     * @param {Object} obj - Object to get value from
+     * @param {string} path - Dot-notated path
+     * @returns {any} - Value at path
+     */
+    getNestedValue(obj, path) {
+        const keys = path.split(this.options.nestingSeparator);
+        let value = obj;
+
+        for (const key of keys) {
+            if (value && typeof value === 'object' && key in value) {
+                value = value[key];
+            } else {
+                return undefined;
+            }
+        }
+
+        return value;
+    }
+
+    /**
+     * Detect and parse different JSON formats
+     * @param {string} jsonString - JSON string
+     * @returns {Object} - Parsed and normalized data
+     */
+    detectAndNormalize(jsonString) {
+        const data = JSON.parse(jsonString);
+
+        // Array of objects (ideal format)
+        if (Array.isArray(data)) {
+            return data;
+        }
+
+        // Single object - wrap in array
+        if (typeof data === 'object' && data !== null) {
+            return [data];
+        }
+
+        // Primitive value - wrap in object
+        return [{ value: data }];
+    }
 }
+
