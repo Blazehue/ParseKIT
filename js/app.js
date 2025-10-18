@@ -51,6 +51,10 @@ class ParseKIT {
         // Convert button
         const convertBtn = document.getElementById('convertBtn');
         convertBtn?.addEventListener('click', () => this.convert());
+
+        // Manual textarea input
+        const textarea = document.getElementById('inputTextarea');
+        textarea?.addEventListener('input', () => this.handleManualInput());
     }
 
     /**
@@ -81,6 +85,7 @@ class ParseKIT {
         const outputPanelTitle = document.getElementById('outputPanelTitle');
         const fileInput = document.getElementById('fileInput');
         const dropzoneText = document.querySelector('.dropzone-text');
+        const inputTextarea = document.getElementById('inputTextarea');
 
         if (this.currentMode === 'json-to-csv') {
             directionText.textContent = 'JSON → CSV';
@@ -88,12 +93,14 @@ class ParseKIT {
             outputPanelTitle.textContent = 'CSV Output';
             fileInput.accept = '.json';
             dropzoneText.textContent = 'Drag & drop your JSON file here';
+            inputTextarea.placeholder = 'Paste your JSON data here...';
         } else {
             directionText.textContent = 'CSV → JSON';
             inputPanelTitle.textContent = 'CSV Input';
             outputPanelTitle.textContent = 'JSON Output';
             fileInput.accept = '.csv';
             dropzoneText.textContent = 'Drag & drop your CSV file here';
+            inputTextarea.placeholder = 'Paste your CSV data here...';
         }
 
         // Clear current input
@@ -133,6 +140,62 @@ class ParseKIT {
         }
         this.updateCharCount();
         this.disableConvertButton();
+        this.clearPreview();
+    }
+
+    /**
+     * Handle manual text input
+     */
+    handleManualInput() {
+        const textarea = document.getElementById('inputTextarea');
+        if (!textarea) return;
+
+        const content = textarea.value.trim();
+        
+        // Update character and line count
+        this.updateCharCount();
+
+        // Enable/disable convert button
+        if (content.length > 0) {
+            this.enableConvertButton();
+        } else {
+            this.disableConvertButton();
+        }
+    }
+
+    /**
+     * Get input content (from file or manual input)
+     * @returns {string|null}
+     */
+    getInputContent() {
+        // Check which input mode is active
+        const uploadArea = document.getElementById('uploadArea');
+        const manualArea = document.getElementById('manualInputArea');
+
+        if (!uploadArea?.classList.contains('hidden')) {
+            // File upload mode - get content from file handler
+            // Content will be retrieved via the fileLoaded event
+            return null;
+        } else if (!manualArea?.classList.contains('hidden')) {
+            // Manual input mode
+            const textarea = document.getElementById('inputTextarea');
+            return textarea?.value.trim() || null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Clear preview area
+     */
+    clearPreview() {
+        const previewPlaceholder = document.querySelector('.preview-placeholder');
+        const previewContent = document.getElementById('previewContent');
+        
+        if (previewPlaceholder && previewContent) {
+            previewPlaceholder.classList.remove('hidden');
+            previewContent.classList.add('hidden');
+        }
     }
 
     /**
