@@ -14,16 +14,180 @@
         <header>
             <h1>ParseKIT</h1>
             <p class="subtitle">JSON ⇄ CSV Converter</p>
+            <p class="description">Convert between JSON and CSV formats instantly. Upload files or paste your data.</p>
         </header>
         
         <main>
-            <!-- Main content will be added in next commit -->
+            <!-- Conversion Direction Toggle -->
+            <div class="conversion-controls">
+                <button class="direction-toggle" id="toggleDirection" aria-label="Toggle conversion direction">
+                    <span class="direction-text">JSON → CSV</span>
+                    <span class="swap-icon">⇄</span>
+                </button>
+            </div>
+
+            <!-- Dual Panel Layout -->
+            <div class="converter-panels">
+                <!-- Left Panel: Input -->
+                <div class="panel input-panel">
+                    <div class="panel-header">
+                        <h2 id="inputPanelTitle">JSON Input</h2>
+                        <div class="panel-actions">
+                            <button class="btn-icon" id="clearInput" title="Clear input" aria-label="Clear input">
+                                <span>🗑️</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Input Mode Toggle -->
+                    <div class="input-mode-toggle">
+                        <button class="mode-btn active" data-mode="upload">
+                            <span>📁</span> Upload File
+                        </button>
+                        <button class="mode-btn" data-mode="manual">
+                            <span>✏️</span> Manual Input
+                        </button>
+                    </div>
+
+                    <!-- File Upload Area -->
+                    <div class="upload-area" id="uploadArea">
+                        <div class="dropzone" id="dropzone">
+                            <div class="dropzone-content">
+                                <span class="upload-icon">📤</span>
+                                <p class="dropzone-text">Drag & drop your JSON file here</p>
+                                <p class="dropzone-subtext">or</p>
+                                <button class="btn-upload" id="uploadBtn">Browse Files</button>
+                                <input type="file" id="fileInput" accept=".json" hidden>
+                                <p class="file-info">Supported: .json (Max 10MB)</p>
+                            </div>
+                            <div class="file-preview hidden" id="filePreview">
+                                <div class="file-details">
+                                    <span class="file-icon">📄</span>
+                                    <div class="file-meta">
+                                        <p class="file-name" id="fileName"></p>
+                                        <p class="file-size" id="fileSize"></p>
+                                    </div>
+                                    <button class="btn-remove" id="removeFile">✕</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Input Area -->
+                    <div class="manual-input-area hidden" id="manualInputArea">
+                        <div class="textarea-wrapper">
+                            <textarea 
+                                id="inputTextarea" 
+                                placeholder="Paste your JSON data here..."
+                                spellcheck="false"
+                                aria-label="JSON input textarea"
+                            ></textarea>
+                            <div class="textarea-info">
+                                <span id="charCount">0 characters</span>
+                                <span id="lineCount">0 lines</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Output -->
+                <div class="panel output-panel">
+                    <div class="panel-header">
+                        <h2 id="outputPanelTitle">CSV Output</h2>
+                        <div class="panel-actions">
+                            <button class="btn-icon" id="copyOutput" title="Copy to clipboard" aria-label="Copy output">
+                                <span>📋</span>
+                            </button>
+                            <button class="btn-icon" id="downloadOutput" title="Download file" aria-label="Download output">
+                                <span>💾</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Preview Area -->
+                    <div class="preview-area" id="previewArea">
+                        <div class="preview-placeholder">
+                            <span class="preview-icon">👁️</span>
+                            <p>Your converted data will appear here</p>
+                            <p class="preview-hint">Upload or paste data to get started</p>
+                        </div>
+                        <div class="preview-content hidden" id="previewContent">
+                            <!-- Preview modes -->
+                            <div class="preview-tabs">
+                                <button class="preview-tab active" data-tab="formatted">Formatted</button>
+                                <button class="preview-tab" data-tab="table">Table View</button>
+                                <button class="preview-tab" data-tab="raw">Raw</button>
+                            </div>
+                            <div class="preview-output" id="previewOutput"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversion Actions -->
+            <div class="conversion-actions">
+                <button class="btn-convert" id="convertBtn" disabled>
+                    <span class="btn-icon">⚡</span>
+                    <span class="btn-text">Convert</span>
+                </button>
+                <div class="conversion-info">
+                    <span id="conversionStatus"></span>
+                </div>
+            </div>
+
+            <!-- Settings Panel (Collapsible) -->
+            <div class="settings-panel collapsed" id="settingsPanel">
+                <button class="settings-toggle" id="settingsToggle">
+                    <span>⚙️</span> Conversion Settings
+                </button>
+                <div class="settings-content hidden" id="settingsContent">
+                    <div class="settings-grid">
+                        <div class="setting-group">
+                            <label for="delimiter">CSV Delimiter</label>
+                            <select id="delimiter">
+                                <option value=",">Comma (,)</option>
+                                <option value=";">Semicolon (;)</option>
+                                <option value="\t">Tab</option>
+                                <option value="|">Pipe (|)</option>
+                            </select>
+                        </div>
+                        <div class="setting-group">
+                            <label for="lineEnding">Line Ending</label>
+                            <select id="lineEnding">
+                                <option value="\n">LF (\n)</option>
+                                <option value="\r\n">CRLF (\r\n)</option>
+                            </select>
+                        </div>
+                        <div class="setting-group">
+                            <label>
+                                <input type="checkbox" id="includeHeaders" checked>
+                                Include Headers
+                            </label>
+                        </div>
+                        <div class="setting-group">
+                            <label>
+                                <input type="checkbox" id="prettifyJSON" checked>
+                                Prettify JSON
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
         
         <footer>
             <p>&copy; 2025 ParseKIT. Built with ❤️ for developers.</p>
+            <button class="btn-help" id="helpBtn">Help</button>
         </footer>
     </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner hidden" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
     
     <script src="js/app.js" type="module"></script>
 </body>
