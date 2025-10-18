@@ -3,11 +3,14 @@
  * Handles file upload, drag-and-drop, and file reading operations
  */
 
+import { Validator } from './validator.js';
+
 export class FileHandler {
     constructor() {
         this.maxFileSize = 10 * 1024 * 1024; // 10MB
         this.currentFile = null;
         this.currentFileType = null;
+        this.validator = new Validator();
         this.initializeEventListeners();
     }
 
@@ -79,7 +82,7 @@ export class FileHandler {
             // Show loading spinner
             this.showLoading(true);
 
-            // Validate file
+            // Validate file size and type
             const validation = this.validateFile(file);
             if (!validation.valid) {
                 this.showError(validation.error);
@@ -90,9 +93,26 @@ export class FileHandler {
             // Read file
             const content = await this.readFile(file);
             
+            // Validate file content
+            const fileType = this.getFileType(file);
+            const contentValidation = this.validateFileContent(content, fileType);
+            
+            if (!contentValidation.valid) {
+                this.showError(`File validation failed:\n${contentValidation.errors.map(e => e.message).join('\n')}`);
+                this.showLoading(false);
+                return;
+            }
+
+            // Show warnings if any
+            if (contentValidation.warnings.length > 0) {
+                contentValidation.warnings.forEach(warning => {
+                    this.showToast(warning.message, 'warning');
+                });
+            }
+
             // Store file info
             this.currentFile = file;
-            this.currentFileType = this.getFileType(file);
+            this.currentFileType = fileType;
 
             // Display file preview
             this.displayFilePreview(file);
@@ -118,24 +138,60 @@ export class FileHandler {
      * @returns {Object} - Validation result
      */
     validateFile(file) {
+        // Check if file exists
+        if (!file) {
+            return {
+                valid: false,
+                error: 'No file selected'
+            };
+        }
+
         // Check file size
+        if (file.size === 0) {
+            return {
+                valid: false,
+                error: 'File is empty'
+            };
+        }
+
         if (file.size > this.maxFileSize) {
             return {
                 valid: false,
-                error: `File size exceeds maximum limit of ${this.formatFileSize(this.maxFileSize)}`
+                error: `File size (${this.formatFileSize(file.size)}) exceeds maximum limit of ${this.formatFileSize(this.maxFileSize)}`
             };
         }
 
         // Check file type
         const fileType = this.getFileType(file);
         if (!fileType) {
+            const extension = file.name.split('.').pop().toLowerCase();
             return {
                 valid: false,
-                error: 'Invalid file type. Please upload a JSON or CSV file.'
+                error: `Invalid file type ".${extension}". Please upload a JSON or CSV file.`
             };
         }
 
         return { valid: true };
+    }
+
+    /**
+     * Validate file content
+     * @param {string} content - File content
+     * @param {string} type - File type ('json' or 'csv')
+     * @returns {Object} - Validation result
+     */
+    validateFileContent(content, type) {
+        if (type === 'json') {
+            return this.validator.validateJSON(content);
+        } else if (type === 'csv') {
+            return this.validator.validateCSV(content);
+        }
+        
+        return {
+            valid: false,
+            errors: [{ message: 'Unknown file type', line: 0 }],
+            warnings: []
+        };
     }
 
     /**
