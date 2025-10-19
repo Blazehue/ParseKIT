@@ -1,35 +1,36 @@
 /* ========================================
-   CSS Variables - Neobrutalism Theme
+   CSS Variables - Orchid Theme
    ======================================== */
 :root {
-    /* Core Palette (OKLCH) */
-    --background: oklch(1 0 0);
-    --background-alt: oklch(1 0 0);
-    --background-dark: oklch(0.9551 0 0);
-
-    --text: oklch(0 0 0);
-    --text-light: oklch(0.3211 0 0);
-    --text-muted: oklch(0.3211 0 0);
-    --text-inverse: oklch(1 0 0);
-
-    --primary: oklch(0.6489 0.2370 26.9728);
-    --primary-dark: oklch(0.6489 0.2370 26.9728);
-    --primary-light: oklch(0.9680 0.2110 109.7692);
-    --accent: oklch(0.5635 0.2408 260.8178);
-
-    --border: oklch(0 0 0);
+    /* Primary Colors */
+    --primary: #DA70D6;
+    --primary-dark: #BA55D3;
+    --primary-light: #E6A8D7;
+    --accent: #9370DB;
+    
+    /* Background Colors */
+    --background: #F8F5FA;
+    --background-alt: #FFFFFF;
+    --background-dark: #2D1B3D;
+    
+    /* Text Colors */
+    --text: #2D1B3D;
+    --text-light: #6B5578;
+    --text-muted: #9B8AA3;
+    --text-inverse: #FFFFFF;
+    
+    /* UI Colors */
+    --border: #E0D4E8;
     --border-focus: var(--primary);
-
-    /* Shadows as colors (used in existing box-shadow declarations) */
-    --shadow: hsl(0 0% 0% / 1.0);
-    --shadow-lg: hsl(0 0% 0% / 1.0);
-
-    /* Status Colors (kept from previous scheme for clarity) */
+    --shadow: rgba(186, 85, 211, 0.15);
+    --shadow-lg: rgba(186, 85, 211, 0.25);
+    
+    /* Status Colors */
     --success: #22C55E;
     --error: #EF4444;
     --warning: #F59E0B;
     --info: #3B82F6;
-
+    
     /* Spacing */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
@@ -37,22 +38,21 @@
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
     --spacing-2xl: 3rem;
-
-    /* Border Radius - flat (neobrutalism) */
-    --radius-sm: 0px;
-    --radius-md: 0px;
-    --radius-lg: 0px;
-    --radius-xl: 0px;
-
+    
+    /* Border Radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    
     /* Transitions */
     --transition-fast: 150ms ease-in-out;
     --transition-base: 250ms ease-in-out;
     --transition-slow: 350ms ease-in-out;
-
+    
     /* Typography */
-    --font-sans: 'Acme', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-sans: 'Acme', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-    --font-serif: 'Merriweather', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
 }
 
 /* ========================================
@@ -862,16 +862,15 @@ kbd {
    Dark Mode
    ======================================== */
 body.dark-mode {
-    /* Dark palette mapped from provided theme */
-    --background: oklch(0 0 0);
-    --background-alt: oklch(0.3211 0 0);
-    --background-dark: oklch(0.2178 0 0);
-    --text: oklch(1 0 0);
-    --text-light: oklch(0.8452 0 0);
-    --text-muted: oklch(0.8452 0 0);
-    --border: oklch(1 0 0);
-    --shadow: hsl(0 0% 0% / 1.0);
-    --shadow-lg: hsl(0 0% 0% / 1.0);
+    --background: #1a1625;
+    --background-alt: #251c35;
+    --background-dark: #0f0a1a;
+    --text: #e8e0f5;
+    --text-light: #b8a8c5;
+    --text-muted: #8a7a98;
+    --border: #3d2f50;
+    --shadow: rgba(218, 112, 214, 0.25);
+    --shadow-lg: rgba(218, 112, 214, 0.35);
 }
 
 body.dark-mode .dropzone {
