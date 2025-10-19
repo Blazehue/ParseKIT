@@ -688,6 +688,17 @@ footer {
     }
 }
 
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
 /* ========================================
    Utility Classes
    ======================================== */
@@ -698,6 +709,160 @@ footer {
 .disabled {
     opacity: 0.5;
     pointer-events: none;
+}
+
+/* ========================================
+   Sample Data Buttons
+   ======================================== */
+.sample-data-btns {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.btn-sample {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--background);
+    border: 2px solid var(--primary-light);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text);
+    transition: all var(--transition-fast);
+}
+
+.btn-sample:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+/* ========================================
+   Keyboard Hints
+   ======================================== */
+.keyboard-hint {
+    margin-top: var(--spacing-sm);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+kbd {
+    padding: 2px 6px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}
+
+/* ========================================
+   Modal
+   ======================================== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: var(--spacing-md);
+}
+
+.modal-content {
+    background: var(--background-alt);
+    border-radius: var(--radius-lg);
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 2px solid var(--border);
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--text);
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all var(--transition-fast);
+}
+
+.modal-close:hover {
+    color: var(--error);
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+}
+
+.modal-body h3 {
+    color: var(--primary);
+    margin-top: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
+}
+
+.modal-body h3:first-child {
+    margin-top: 0;
+}
+
+.modal-body ul, .modal-body ol {
+    margin-left: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+}
+
+.modal-body li {
+    margin-bottom: var(--spacing-sm);
+}
+
+/* ========================================
+   Dark Mode
+   ======================================== */
+body.dark-mode {
+    --background: #1a1625;
+    --background-alt: #251c35;
+    --background-dark: #0f0a1a;
+    --text: #e8e0f5;
+    --text-light: #b8a8c5;
+    --text-muted: #8a7a98;
+    --border: #3d2f50;
+    --shadow: rgba(218, 112, 214, 0.25);
+    --shadow-lg: rgba(218, 112, 214, 0.35);
+}
+
+body.dark-mode .dropzone {
+    background: var(--background-dark);
+}
+
+body.dark-mode .preview-output {
+    background: var(--background-dark);
+}
+
+body.dark-mode textarea {
+    background: var(--background-dark);
+    color: var(--text);
+}
+
+body.dark-mode table {
+    color: var(--text);
 }
 
 /* ========================================

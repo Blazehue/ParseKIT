@@ -122,6 +122,29 @@ class ParseKIT {
             // Download output
             const downloadBtn = document.getElementById('downloadOutput');
             downloadBtn?.addEventListener('click', () => this.downloadOutput());
+
+                // Sample data buttons
+                const loadSampleJSON = document.getElementById('loadSampleJSON');
+                const loadSampleCSV = document.getElementById('loadSampleCSV');
+                loadSampleJSON?.addEventListener('click', () => this.loadSampleData('json'));
+                loadSampleCSV?.addEventListener('click', () => this.loadSampleData('csv'));
+
+                // Help modal
+                const helpBtn = document.getElementById('helpBtn');
+                const closeHelp = document.getElementById('closeHelp');
+                const helpModal = document.getElementById('helpModal');
+                helpBtn?.addEventListener('click', () => helpModal?.classList.remove('hidden'));
+                closeHelp?.addEventListener('click', () => helpModal?.classList.add('hidden'));
+                helpModal?.addEventListener('click', (e) => {
+                    if (e.target === helpModal) helpModal.classList.add('hidden');
+                });
+
+                // Dark mode toggle
+                const darkModeToggle = document.getElementById('darkModeToggle');
+                darkModeToggle?.addEventListener('click', () => this.toggleDarkMode());
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
     }
 
     /**
@@ -140,6 +163,118 @@ class ParseKIT {
             this.handleFileCleared();
         });
     }
+
+        /**
+         * Handle keyboard shortcuts
+         * @param {KeyboardEvent} e - Keyboard event
+         */
+        handleKeyboardShortcuts(e) {
+            // Ctrl+Enter or Cmd+Enter - Convert
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                const convertBtn = document.getElementById('convertBtn');
+                if (convertBtn && !convertBtn.disabled) {
+                    this.convert();
+                }
+            }
+
+            // Ctrl+S or Cmd+S - Download
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (this.currentOutput) {
+                    this.downloadOutput();
+                }
+            }
+        }
+
+        /**
+         * Load sample data for testing
+         * @param {string} type - 'json' or 'csv'
+         */
+        loadSampleData(type) {
+            const textarea = document.getElementById('inputTextarea');
+            if (!textarea) return;
+
+            let sampleData = '';
+
+            if (type === 'json') {
+                sampleData = JSON.stringify([
+                    {
+                        "id": 1,
+                        "name": "Alice Johnson",
+                        "email": "alice@example.com",
+                        "age": 28,
+                        "city": "New York",
+                        "active": true
+                    },
+                    {
+                        "id": 2,
+                        "name": "Bob Smith",
+                        "email": "bob@example.com",
+                        "age": 35,
+                        "city": "Los Angeles",
+                        "active": false
+                    },
+                    {
+                        "id": 3,
+                        "name": "Charlie Brown",
+                        "email": "charlie@example.com",
+                        "age": 42,
+                        "city": "Chicago",
+                        "active": true
+                    }
+                ], null, 2);
+
+                // Set mode to JSON to CSV
+                if (this.currentMode !== 'json-to-csv') {
+                    this.toggleDirection();
+                }
+            } else {
+                sampleData = `id,name,email,age,city,active
+    1,Alice Johnson,alice@example.com,28,New York,true
+    2,Bob Smith,bob@example.com,35,Los Angeles,false
+    3,Charlie Brown,charlie@example.com,42,Chicago,true`;
+
+                // Set mode to CSV to JSON
+                if (this.currentMode !== 'csv-to-json') {
+                    this.toggleDirection();
+                }
+            }
+
+            // Switch to manual input mode
+            this.switchInputMode('manual');
+        
+            // Set the sample data
+            textarea.value = sampleData;
+        
+            // Trigger input handler
+            this.handleManualInput();
+        
+            this.showToast('Sample data loaded!', 'success');
+        }
+
+        /**
+         * Toggle dark mode
+         */
+        toggleDarkMode() {
+            const body = document.body;
+            const isDark = body.classList.toggle('dark-mode');
+        
+            // Update button text
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            if (darkModeToggle) {
+                darkModeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+            }
+
+            // Save preference
+            try {
+                localStorage.setItem('parsekit_darkMode', isDark ? 'true' : 'false');
+            } catch (error) {
+                console.warn('Failed to save dark mode preference');
+            }
+
+            this.showToast(isDark ? 'Dark mode enabled' : 'Light mode enabled', 'info');
+        }
 
     /**
      * Toggle conversion direction
@@ -870,6 +1005,20 @@ class ParseKIT {
                 } catch (error) {
                     console.warn('Failed to load preferences:', error);
                 }
+
+                    // Load dark mode preference
+                    try {
+                        const darkMode = localStorage.getItem('parsekit_darkMode');
+                        if (darkMode === 'true') {
+                            document.body.classList.add('dark-mode');
+                            const darkModeToggle = document.getElementById('darkModeToggle');
+                            if (darkModeToggle) {
+                                darkModeToggle.textContent = '☀️ Light Mode';
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('Failed to load dark mode preference');
+                    }
             }
 
             /**
