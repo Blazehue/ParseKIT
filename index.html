@@ -75,6 +75,10 @@
 
                     <!-- Manual Input Area -->
                     <div class="manual-input-area hidden" id="manualInputArea">
+                            <div class="sample-data-btns">
+                                <button class="btn-sample" id="loadSampleJSON">📝 Load Sample JSON</button>
+                                <button class="btn-sample" id="loadSampleCSV">📊 Load Sample CSV</button>
+                            </div>
                         <div class="textarea-wrapper">
                             <textarea 
                                 id="inputTextarea" 
@@ -133,6 +137,9 @@
                 <div class="conversion-info">
                     <span id="conversionStatus"></span>
                 </div>
+                    <div class="keyboard-hint">
+                        <small>Tip: Press <kbd>Ctrl+Enter</kbd> to convert</small>
+                    </div>
             </div>
 
             <!-- Settings Panel (Collapsible) -->
@@ -178,17 +185,56 @@
         <footer>
             <p>&copy; 2025 ParseKIT. Built with ❤️ for developers.</p>
             <button class="btn-help" id="helpBtn">Help</button>
+                <button class="btn-help" id="darkModeToggle">🌙 Dark Mode</button>
         </footer>
     </div>
 
     <!-- Loading Spinner -->
     <div class="loading-spinner hidden" id="loadingSpinner">
         <div class="spinner"></div>
+            <p style="color: white; margin-top: 1rem;">Processing...</p>
     </div>
 
     <!-- Toast Notifications -->
     <div class="toast-container" id="toastContainer"></div>
     
+        <!-- Help Modal -->
+        <div class="modal hidden" id="helpModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>ParseKIT Help</h2>
+                    <button class="modal-close" id="closeHelp">✕</button>
+                </div>
+                <div class="modal-body">
+                    <h3>How to Use</h3>
+                    <ol>
+                        <li>Select conversion direction (JSON ⇄ CSV)</li>
+                        <li>Upload a file or paste your data</li>
+                        <li>Click "Convert" or press Ctrl+Enter</li>
+                        <li>Download or copy the result</li>
+                    </ol>
+                
+                    <h3>Keyboard Shortcuts</h3>
+                    <ul>
+                        <li><kbd>Ctrl+Enter</kbd> - Convert</li>
+                        <li><kbd>Ctrl+C</kbd> - Copy output (when focused)</li>
+                        <li><kbd>Ctrl+S</kbd> - Download output</li>
+                    </ul>
+                
+                    <h3>Supported Formats</h3>
+                    <p>JSON: Arrays, objects, nested structures</p>
+                    <p>CSV: Comma, semicolon, tab, or pipe delimited</p>
+                
+                    <h3>Tips</h3>
+                    <ul>
+                        <li>Maximum file size: 10MB</li>
+                        <li>Use settings to customize output format</li>
+                        <li>Your preferences are saved automatically</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
     <script src="js/app.js" type="module"></script>
 </body>
 </html>
