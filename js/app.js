@@ -14,6 +14,8 @@ class ParseKIT {
         this.csvToJson = null;
         this.currentMode = 'json-to-csv'; // or 'csv-to-json'
         this.currentInputContent = null;
+        this.currentOutput = null;
+        this.currentPreviewMode = 'formatted';
         this.init();
     }
 
@@ -96,6 +98,14 @@ class ParseKIT {
                 if (this.currentInputContent) {
                     this.convert();
                 }
+            });
+        });
+
+        // Preview tab switching
+        const previewTabs = document.querySelectorAll('.preview-tab');
+        previewTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                this.switchPreviewMode(tab.dataset.tab);
             });
         });
     }
@@ -400,7 +410,8 @@ class ParseKIT {
         }
 
         if (result.success) {
-            this.displayOutput(result.data);
+            this.currentOutput = result;
+            this.displayOutput(result);
             this.showToast(`Conversion successful! ${result.rows} rows processed.`, 'success');
             
             // Update status
@@ -416,18 +427,203 @@ class ParseKIT {
 
     /**
      * Display output in preview area
-     * @param {string} output - Converted output
+     * @param {Object} result - Conversion result
      */
-    displayOutput(output) {
+    displayOutput(result) {
         const previewPlaceholder = document.querySelector('.preview-placeholder');
         const previewContent = document.getElementById('previewContent');
-        const previewOutput = document.getElementById('previewOutput');
 
-        if (previewPlaceholder && previewContent && previewOutput) {
+        if (previewPlaceholder && previewContent) {
             previewPlaceholder.classList.add('hidden');
             previewContent.classList.remove('hidden');
-            previewOutput.textContent = output;
+            
+            // Display in current preview mode
+            this.updatePreviewDisplay();
         }
+    }
+
+    /**
+     * Switch preview mode
+     * @param {string} mode - Preview mode ('formatted', 'table', 'raw')
+     */
+    switchPreviewMode(mode) {
+        this.currentPreviewMode = mode;
+        
+        // Update active tab
+        document.querySelectorAll('.preview-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === mode);
+        });
+        
+        // Update display
+        this.updatePreviewDisplay();
+    }
+
+    /**
+     * Update preview display based on current mode
+     */
+    updatePreviewDisplay() {
+        if (!this.currentOutput) return;
+
+        const previewOutput = document.getElementById('previewOutput');
+        if (!previewOutput) return;
+
+        switch (this.currentPreviewMode) {
+            case 'formatted':
+                this.displayFormattedPreview(previewOutput);
+                break;
+            case 'table':
+                this.displayTablePreview(previewOutput);
+                break;
+            case 'raw':
+                this.displayRawPreview(previewOutput);
+                break;
+        }
+    }
+
+    /**
+     * Display formatted preview
+     * @param {HTMLElement} container - Preview container
+     */
+    displayFormattedPreview(container) {
+        container.innerHTML = '';
+        const pre = document.createElement('pre');
+        pre.style.whiteSpace = 'pre-wrap';
+        pre.style.wordWrap = 'break-word';
+        pre.textContent = this.currentOutput.data;
+        container.appendChild(pre);
+    }
+
+    /**
+     * Display table preview
+     * @param {HTMLElement} container - Preview container
+     */
+    displayTablePreview(container) {
+        container.innerHTML = '';
+        
+        try {
+            if (this.currentMode === 'json-to-csv') {
+                // Display CSV as table
+                this.displayCSVTable(container, this.currentOutput.data);
+            } else {
+                // Display JSON as table
+                this.displayJSONTable(container, this.currentOutput.parsed);
+            }
+        } catch (error) {
+            container.innerHTML = `<p style="color: var(--error);">Error displaying table view: ${error.message}</p>`;
+        }
+    }
+
+    /**
+     * Display CSV as HTML table
+     * @param {HTMLElement} container - Container element
+     * @param {string} csvData - CSV data
+     */
+    displayCSVTable(container, csvData) {
+        const lines = csvData.split('\n').filter(line => line.trim());
+        if (lines.length === 0) return;
+
+        const delimiter = this.jsonToCsv.options.delimiter;
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.fontSize = '0.85rem';
+
+        lines.forEach((line, index) => {
+            const row = document.createElement('tr');
+            const cells = line.split(delimiter);
+            
+            cells.forEach(cell => {
+                const cellEl = document.createElement(index === 0 ? 'th' : 'td');
+                cellEl.textContent = cell.replace(/^"|"$/g, ''); // Remove quotes
+                cellEl.style.border = '1px solid var(--border)';
+                cellEl.style.padding = '8px';
+                cellEl.style.textAlign = 'left';
+                if (index === 0) {
+                    cellEl.style.backgroundColor = 'var(--background)';
+                    cellEl.style.fontWeight = 'bold';
+                }
+                row.appendChild(cellEl);
+            });
+            
+            table.appendChild(row);
+        });
+
+        container.appendChild(table);
+    }
+
+    /**
+     * Display JSON as HTML table
+     * @param {HTMLElement} container - Container element
+     * @param {Array|Object} jsonData - JSON data
+     */
+    displayJSONTable(container, jsonData) {
+        if (Array.isArray(jsonData) && jsonData.length > 0) {
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            table.style.fontSize = '0.85rem';
+
+            // Header row
+            const headers = Object.keys(jsonData[0]);
+            const headerRow = document.createElement('tr');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                th.style.border = '1px solid var(--border)';
+                th.style.padding = '8px';
+                th.style.backgroundColor = 'var(--background)';
+                th.style.fontWeight = 'bold';
+                th.style.textAlign = 'left';
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            // Data rows
+            jsonData.slice(0, 100).forEach(item => { // Limit to 100 rows for performance
+                const row = document.createElement('tr');
+                headers.forEach(header => {
+                    const td = document.createElement('td');
+                    const value = item[header];
+                    td.textContent = value === null || value === undefined ? '' : String(value);
+                    td.style.border = '1px solid var(--border)';
+                    td.style.padding = '8px';
+                    row.appendChild(td);
+                });
+                table.appendChild(row);
+            });
+
+            if (jsonData.length > 100) {
+                const note = document.createElement('p');
+                note.textContent = `Showing first 100 of ${jsonData.length} rows`;
+                note.style.marginTop = '10px';
+                note.style.color = 'var(--text-muted)';
+                note.style.fontSize = '0.85rem';
+                container.appendChild(note);
+            }
+
+            container.appendChild(table);
+        } else {
+            container.innerHTML = '<p style="color: var(--text-muted);">No tabular data to display</p>';
+        }
+    }
+
+    /**
+     * Display raw preview
+     * @param {HTMLElement} container - Preview container
+     */
+    displayRawPreview(container) {
+        container.innerHTML = '';
+        const textarea = document.createElement('textarea');
+        textarea.value = this.currentOutput.data;
+        textarea.readOnly = true;
+        textarea.style.width = '100%';
+        textarea.style.minHeight = '400px';
+        textarea.style.fontFamily = 'var(--font-mono)';
+        textarea.style.fontSize = '0.85rem';
+        textarea.style.border = 'none';
+        textarea.style.background = 'transparent';
+        textarea.style.resize = 'vertical';
+        container.appendChild(textarea);
     }
 
     /**
