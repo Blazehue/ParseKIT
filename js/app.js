@@ -2,11 +2,18 @@
 // Main application entry point
 
 import { FileHandler } from './fileHandler.js';
+import { Validator } from './validator.js';
+import { JSONToCSVConverter } from './jsonToCsv.js';
+import { CSVToJSONConverter } from './csvToJson.js';
 
 class ParseKIT {
     constructor() {
         this.fileHandler = null;
+        this.validator = new Validator();
+        this.jsonToCsv = null;
+        this.csvToJson = null;
         this.currentMode = 'json-to-csv'; // or 'csv-to-json'
+        this.currentInputContent = null;
         this.init();
     }
 
@@ -16,6 +23,9 @@ class ParseKIT {
     init() {
         console.log('ParseKIT initialized');
         
+        // Initialize converters with default options
+        this.updateConverters();
+        
         // Initialize file handler
         this.fileHandler = new FileHandler();
         
@@ -24,6 +34,27 @@ class ParseKIT {
         
         // Setup custom event listeners
         this.setupCustomEvents();
+    }
+
+    /**
+     * Update converters with current settings
+     */
+    updateConverters() {
+        const delimiter = document.getElementById('delimiter')?.value || ',';
+        const lineEnding = document.getElementById('lineEnding')?.value || '\n';
+        const includeHeaders = document.getElementById('includeHeaders')?.checked !== false;
+        const prettifyJSON = document.getElementById('prettifyJSON')?.checked !== false;
+
+        this.jsonToCsv = new JSONToCSVConverter({
+            delimiter,
+            lineEnding,
+            includeHeaders
+        });
+
+        this.csvToJson = new CSVToJSONConverter({
+            delimiter: delimiter === ',' ? null : delimiter, // Auto-detect comma
+            hasHeaders: includeHeaders
+        });
     }
 
     /**
@@ -55,6 +86,18 @@ class ParseKIT {
         // Manual textarea input
         const textarea = document.getElementById('inputTextarea');
         textarea?.addEventListener('input', () => this.handleManualInput());
+
+        // Settings changes
+        const settingsInputs = document.querySelectorAll('#settingsContent select, #settingsContent input[type="checkbox"]');
+        settingsInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                this.updateConverters();
+                // Re-convert if there's output
+                if (this.currentInputContent) {
+                    this.convert();
+                }
+            });
+        });
     }
 
     /**
@@ -155,11 +198,26 @@ class ParseKIT {
         // Update character and line count
         this.updateCharCount();
 
-        // Enable/disable convert button
+        // Store current content
+        this.currentInputContent = content;
+
+        // Validate input
         if (content.length > 0) {
+            this.validateInput(content);
             this.enableConvertButton();
         } else {
             this.disableConvertButton();
+            this.clearValidation();
+        }
+    }
+
+    /**
+     * Clear validation display
+     */
+    clearValidation() {
+        const statusEl = document.getElementById('conversionStatus');
+        if (statusEl) {
+            statusEl.textContent = '';
         }
     }
 
@@ -217,11 +275,61 @@ class ParseKIT {
      * @param {Object} detail - Event detail with content and type
      */
     handleFileLoaded(detail) {
+        this.currentInputContent = detail.content;
+        
+        // Validate content
+        this.validateInput(detail.content);
+        
         // Enable convert button
         this.enableConvertButton();
         
         // Update UI based on file type
         console.log(`Loaded ${detail.type} file with ${detail.content.length} characters`);
+    }
+
+    /**
+     * Validate input content
+     * @param {string} content - Input content
+     */
+    validateInput(content) {
+        if (!content) return;
+
+        let validation;
+        
+        if (this.currentMode === 'json-to-csv') {
+            validation = this.validator.validateJSON(content);
+        } else {
+            validation = this.validator.validateCSV(content);
+        }
+
+        this.displayValidation(validation);
+    }
+
+    /**
+     * Display validation results
+     * @param {Object} validation - Validation result
+     */
+    displayValidation(validation) {
+        const statusEl = document.getElementById('conversionStatus');
+        if (!statusEl) return;
+
+        if (validation.valid) {
+            statusEl.textContent = '✓ Input is valid';
+            statusEl.style.color = 'var(--success)';
+        } else {
+            const errorCount = validation.errors.length;
+            const warningCount = validation.warnings.length;
+            statusEl.textContent = `⚠ ${errorCount} error(s), ${warningCount} warning(s)`;
+            statusEl.style.color = 'var(--warning)';
+            
+            // Show detailed errors in console
+            if (errorCount > 0) {
+                console.error('Validation errors:', validation.errors);
+            }
+            if (warningCount > 0) {
+                console.warn('Validation warnings:', validation.warnings);
+            }
+        }
     }
 
     /**
@@ -274,7 +382,78 @@ class ParseKIT {
      */
     convert() {
         console.log('Convert button clicked');
-        // Conversion logic will be added in next commits
+        
+        // Get input content
+        const content = this.currentInputContent;
+        if (!content) {
+            this.showToast('No input data to convert', 'warning');
+            return;
+        }
+
+        // Perform conversion
+        let result;
+        
+        if (this.currentMode === 'json-to-csv') {
+            result = this.jsonToCsv.convert(content);
+        } else {
+            result = this.csvToJson.convert(content);
+        }
+
+        if (result.success) {
+            this.displayOutput(result.data);
+            this.showToast(`Conversion successful! ${result.rows} rows processed.`, 'success');
+            
+            // Update status
+            const statusEl = document.getElementById('conversionStatus');
+            if (statusEl) {
+                statusEl.textContent = `✓ Converted ${result.rows} rows, ${result.columns || 0} columns`;
+                statusEl.style.color = 'var(--success)';
+            }
+        } else {
+            this.showToast(`Conversion failed: ${result.error}`, 'error');
+        }
+    }
+
+    /**
+     * Display output in preview area
+     * @param {string} output - Converted output
+     */
+    displayOutput(output) {
+        const previewPlaceholder = document.querySelector('.preview-placeholder');
+        const previewContent = document.getElementById('previewContent');
+        const previewOutput = document.getElementById('previewOutput');
+
+        if (previewPlaceholder && previewContent && previewOutput) {
+            previewPlaceholder.classList.add('hidden');
+            previewContent.classList.remove('hidden');
+            previewOutput.textContent = output;
+        }
+    }
+
+    /**
+     * Show toast notification
+     * @param {string} message - Toast message
+     * @param {string} type - Toast type
+     */
+    showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        
+        container.appendChild(toast);
+
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => {
+                if (container.contains(toast)) {
+                    container.removeChild(toast);
+                }
+            }, 300);
+        }, 3000);
     }
 }
 
