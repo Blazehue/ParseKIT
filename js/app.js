@@ -31,6 +31,9 @@ class ParseKIT {
         // Initialize file handler
         this.fileHandler = new FileHandler();
         
+            // Load saved preferences
+            this.loadPreferences();
+        
         // Setup event listeners
         this.setupEventListeners();
         
@@ -57,6 +60,9 @@ class ParseKIT {
             delimiter: delimiter === ',' ? null : delimiter, // Auto-detect comma
             hasHeaders: includeHeaders
         });
+
+            // Save preferences
+            this.savePreferences();
     }
 
     /**
@@ -747,6 +753,129 @@ class ParseKIT {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         }
+
+            /**
+             * Save user preferences to localStorage
+             */
+            savePreferences() {
+                const preferences = {
+                    delimiter: document.getElementById('delimiter')?.value,
+                    lineEnding: document.getElementById('lineEnding')?.value,
+                    includeHeaders: document.getElementById('includeHeaders')?.checked,
+                    prettifyJSON: document.getElementById('prettifyJSON')?.checked,
+                    currentMode: this.currentMode
+                };
+
+                try {
+                    localStorage.setItem('parsekit_preferences', JSON.stringify(preferences));
+                } catch (error) {
+                    console.warn('Failed to save preferences:', error);
+                }
+            }
+
+            /**
+             * Load user preferences from localStorage
+             */
+            loadPreferences() {
+                try {
+                    const saved = localStorage.getItem('parsekit_preferences');
+                    if (!saved) return;
+
+                    const preferences = JSON.parse(saved);
+
+                    // Apply saved preferences
+                    if (preferences.delimiter) {
+                        const delimiterEl = document.getElementById('delimiter');
+                        if (delimiterEl) delimiterEl.value = preferences.delimiter;
+                    }
+
+                    if (preferences.lineEnding) {
+                        const lineEndingEl = document.getElementById('lineEnding');
+                        if (lineEndingEl) lineEndingEl.value = preferences.lineEnding;
+                    }
+
+                    if (typeof preferences.includeHeaders === 'boolean') {
+                        const includeHeadersEl = document.getElementById('includeHeaders');
+                        if (includeHeadersEl) includeHeadersEl.checked = preferences.includeHeaders;
+                    }
+
+                    if (typeof preferences.prettifyJSON === 'boolean') {
+                        const prettifyJSONEl = document.getElementById('prettifyJSON');
+                        if (prettifyJSONEl) prettifyJSONEl.checked = preferences.prettifyJSON;
+                    }
+
+                    console.log('Loaded preferences from localStorage');
+                } catch (error) {
+                    console.warn('Failed to load preferences:', error);
+                }
+            }
+
+            /**
+             * Download with custom filename
+             */
+            downloadWithCustomName() {
+                if (!this.currentOutput || !this.currentOutput.data) {
+                    this.showToast('No output to download', 'warning');
+                    return;
+                }
+
+                // Prompt for filename
+                const extension = this.currentMode === 'json-to-csv' ? 'csv' : 'json';
+                const defaultName = `converted.${extension}`;
+                const filename = prompt('Enter filename:', defaultName);
+
+                if (!filename) return;
+
+                // Ensure correct extension
+                const finalFilename = filename.endsWith(`.${extension}`) ? filename : `${filename}.${extension}`;
+                const mimeType = this.currentMode === 'json-to-csv' ? 'text/csv' : 'application/json';
+
+                this.downloadFile(this.currentOutput.data, finalFilename, mimeType);
+                this.showToast(`Downloaded ${finalFilename}`, 'success');
+            }
+
+            /**
+             * Get conversion summary/report
+             * @returns {Object} - Conversion statistics
+             */
+            getConversionReport() {
+                if (!this.currentOutput) {
+                    return null;
+                }
+
+                const report = {
+                    timestamp: new Date().toISOString(),
+                    mode: this.currentMode,
+                    inputSize: this.currentInputContent?.length || 0,
+                    outputSize: this.currentOutput.data?.length || 0,
+                    rows: this.currentOutput.rows || 0,
+                    columns: this.currentOutput.columns || 0,
+                    settings: {
+                        delimiter: document.getElementById('delimiter')?.value,
+                        lineEnding: document.getElementById('lineEnding')?.value.replace('\n', 'LF').replace('\r\n', 'CRLF'),
+                        includeHeaders: document.getElementById('includeHeaders')?.checked,
+                        prettifyJSON: document.getElementById('prettifyJSON')?.checked
+                    }
+                };
+
+                return report;
+            }
+
+            /**
+             * Export conversion report as JSON
+             */
+            exportReport() {
+                const report = this.getConversionReport();
+                if (!report) {
+                    this.showToast('No conversion to report', 'warning');
+                    return;
+                }
+
+                const reportJSON = JSON.stringify(report, null, 2);
+                const filename = `conversion_report_${new Date().toISOString().slice(0, 10)}.json`;
+                this.downloadFile(reportJSON, filename, 'application/json');
+                this.showToast('Report exported', 'success');
+            }
 }
 
 // Initialize app when DOM is ready
