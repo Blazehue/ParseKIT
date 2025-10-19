@@ -1,29 +1,29 @@
 /* ========================================
-   CSS Variables - Orchid Theme
-   ======================================== */
+    CSS Variables - Black & White Theme
+    ======================================== */
 :root {
-    /* Primary Colors */
-    --primary: #DA70D6;
-    --primary-dark: #BA55D3;
-    --primary-light: #E6A8D7;
-    --accent: #9370DB;
+     /* Primary Colors (grayscale) */
+     --primary: #000000;
+     --primary-dark: #000000;
+     --primary-light: #f0f0f0;
+     --accent: #000000;
     
     /* Background Colors */
-    --background: #F8F5FA;
+    --background: #FFFFFF;
     --background-alt: #FFFFFF;
-    --background-dark: #2D1B3D;
+    --background-dark: #111111;
     
     /* Text Colors */
-    --text: #2D1B3D;
-    --text-light: #6B5578;
-    --text-muted: #9B8AA3;
+    --text: #000000;
+    --text-light: #333333;
+    --text-muted: #666666;
     --text-inverse: #FFFFFF;
     
     /* UI Colors */
-    --border: #E0D4E8;
-    --border-focus: var(--primary);
-    --shadow: rgba(186, 85, 211, 0.15);
-    --shadow-lg: rgba(186, 85, 211, 0.25);
+    --border: #DDDDDD;
+    --border-focus: #000000;
+    --shadow: rgba(0, 0, 0, 0.15);
+    --shadow-lg: rgba(0, 0, 0, 0.25);
     
     /* Status Colors */
     --success: #22C55E;
@@ -91,10 +91,7 @@ header {
 header h1 {
     font-size: 2.5rem;
     font-weight: 700;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--text);
     margin-bottom: var(--spacing-sm);
 }
 
@@ -125,7 +122,7 @@ header h1 {
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-md) var(--spacing-xl);
-    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background: var(--primary);
     color: var(--text-inverse);
     border: none;
     border-radius: var(--radius-xl);
@@ -516,7 +513,7 @@ body.dark-mode .preview-output {
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-md) var(--spacing-2xl);
-    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background: var(--primary);
     color: var(--text-inverse);
     border: none;
     border-radius: var(--radius-xl);
@@ -641,9 +638,7 @@ footer {
     transition: all var(--transition-base);
 }
 
-.btn-help:hover {
-    background: var(--primary-dark);
-}
+.btn-help:hover { background: #111111; }
 
 /* ========================================
    Loading Spinner
@@ -748,7 +743,7 @@ footer {
 .btn-sample {
     padding: var(--spacing-sm) var(--spacing-md);
     background: var(--background);
-    border: 2px solid var(--primary-light);
+    border: 2px solid #e0e0e0;
     border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 0.85rem;
@@ -756,10 +751,7 @@ footer {
     transition: all var(--transition-fast);
 }
 
-.btn-sample:hover {
-    background: var(--primary-light);
-    border-color: var(--primary);
-}
+.btn-sample:hover { background: #f5f5f5; border-color: #000; }
 
 /* ========================================
    Keyboard Hints
@@ -862,15 +854,15 @@ kbd {
    Dark Mode
    ======================================== */
 body.dark-mode {
-    --background: #1a1625;
-    --background-alt: #251c35;
-    --background-dark: #0f0a1a;
-    --text: #e8e0f5;
-    --text-light: #b8a8c5;
-    --text-muted: #8a7a98;
-    --border: #3d2f50;
-    --shadow: rgba(218, 112, 214, 0.25);
-    --shadow-lg: rgba(218, 112, 214, 0.35);
+    --background: #0a0a0a;
+    --background-alt: #111111;
+    --background-dark: #0a0a0a;
+    --text: #ffffff;
+    --text-light: #e0e0e0;
+    --text-muted: #bdbdbd;
+    --border: #222222;
+    --shadow: rgba(0, 0, 0, 0.5);
+    --shadow-lg: rgba(0, 0, 0, 0.7);
 }
 
 body.dark-mode .dropzone {

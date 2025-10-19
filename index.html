@@ -17,7 +17,7 @@
     <div class="container">
         <header>
             <h1>ParseKIT</h1>
-            <p class="subtitle">JSON ⇄ CSV Converter</p>
+            <p class="subtitle">JSON to CSV Converter</p>
             <p class="description">Convert between JSON and CSV formats instantly. Upload files or paste your data.</p>
         </header>
         
@@ -26,7 +26,6 @@
             <div class="conversion-controls">
                 <button class="direction-toggle" id="toggleDirection" aria-label="Toggle conversion direction">
                     <span class="direction-text">JSON → CSV</span>
-                    <span class="swap-icon">⇄</span>
                 </button>
             </div>
 
@@ -38,26 +37,22 @@
                         <h2 id="inputPanelTitle">JSON Input</h2>
                         <div class="panel-actions">
                             <button class="btn-icon" id="clearInput" title="Clear input" aria-label="Clear input">
-                                <span>🗑️</span>
+                                <span>Clear</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- Input Mode Toggle -->
                     <div class="input-mode-toggle">
-                        <button class="mode-btn active" data-mode="upload">
-                            <span>📁</span> Upload File
-                        </button>
-                        <button class="mode-btn" data-mode="manual">
-                            <span>✏️</span> Manual Input
-                        </button>
+                        <button class="mode-btn active" data-mode="upload">Upload File</button>
+                        <button class="mode-btn" data-mode="manual">Manual Input</button>
                     </div>
 
                     <!-- File Upload Area -->
                     <div class="upload-area" id="uploadArea">
                         <div class="dropzone" id="dropzone">
                             <div class="dropzone-content">
-                                <span class="upload-icon">📤</span>
+                                <span class="upload-icon" aria-hidden="true"></span>
                                 <p class="dropzone-text">Drag & drop your JSON file here</p>
                                 <p class="dropzone-subtext">or</p>
                                 <button class="btn-upload" id="uploadBtn">Browse Files</button>
@@ -66,12 +61,12 @@
                             </div>
                             <div class="file-preview hidden" id="filePreview">
                                 <div class="file-details">
-                                    <span class="file-icon">📄</span>
+                                    <span class="file-icon" aria-hidden="true"></span>
                                     <div class="file-meta">
                                         <p class="file-name" id="fileName"></p>
                                         <p class="file-size" id="fileSize"></p>
                                     </div>
-                                    <button class="btn-remove" id="removeFile">✕</button>
+                                    <button class="btn-remove" id="removeFile" aria-label="Remove file">Remove</button>
                                 </div>
                             </div>
                         </div>
@@ -80,8 +75,8 @@
                     <!-- Manual Input Area -->
                     <div class="manual-input-area hidden" id="manualInputArea">
                             <div class="sample-data-btns">
-                                <button class="btn-sample" id="loadSampleJSON">📝 Load Sample JSON</button>
-                                <button class="btn-sample" id="loadSampleCSV">📊 Load Sample CSV</button>
+                                <button class="btn-sample" id="loadSampleJSON">Load Sample JSON</button>
+                                <button class="btn-sample" id="loadSampleCSV">Load Sample CSV</button>
                             </div>
                         <div class="textarea-wrapper">
                             <textarea 
@@ -103,19 +98,15 @@
                     <div class="panel-header">
                         <h2 id="outputPanelTitle">CSV Output</h2>
                         <div class="panel-actions">
-                            <button class="btn-icon" id="copyOutput" title="Copy to clipboard" aria-label="Copy output">
-                                <span>📋</span>
-                            </button>
-                            <button class="btn-icon" id="downloadOutput" title="Download file" aria-label="Download output">
-                                <span>💾</span>
-                            </button>
+                            <button class="btn-icon" id="copyOutput" title="Copy to clipboard" aria-label="Copy output">Copy</button>
+                            <button class="btn-icon" id="downloadOutput" title="Download file" aria-label="Download output">Download</button>
                         </div>
                     </div>
 
                     <!-- Preview Area -->
                     <div class="preview-area" id="previewArea">
                         <div class="preview-placeholder">
-                            <span class="preview-icon">👁️</span>
+                            <span class="preview-icon" aria-hidden="true"></span>
                             <p>Your converted data will appear here</p>
                             <p class="preview-hint">Upload or paste data to get started</p>
                         </div>
@@ -135,7 +126,6 @@
             <!-- Conversion Actions -->
             <div class="conversion-actions">
                 <button class="btn-convert" id="convertBtn" disabled>
-                    <span class="btn-icon">⚡</span>
                     <span class="btn-text">Convert</span>
                 </button>
                 <div class="conversion-info">
@@ -148,9 +138,7 @@
 
             <!-- Settings Panel (Collapsible) -->
             <div class="settings-panel collapsed" id="settingsPanel">
-                <button class="settings-toggle" id="settingsToggle">
-                    <span>⚙️</span> Conversion Settings
-                </button>
+                <button class="settings-toggle" id="settingsToggle">Conversion Settings</button>
                 <div class="settings-content hidden" id="settingsContent">
                     <div class="settings-grid">
                         <div class="setting-group">
@@ -189,7 +177,7 @@
         <footer>
             <p>&copy; 2025 ParseKIT. Built with ❤️ for developers.</p>
             <button class="btn-help" id="helpBtn">Help</button>
-                <button class="btn-help" id="darkModeToggle">🌙 Dark Mode</button>
+                <button class="btn-help" id="darkModeToggle">Dark Mode</button>
         </footer>
     </div>
 
