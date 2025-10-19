@@ -35,10 +35,13 @@ export class CSVToJSONConverter {
                 throw new Error('Input is empty');
             }
 
+            // Remove BOM if present
+            csvString = this.removeBOM(csvString);
+
             // Detect delimiter if not provided
             const delimiter = this.options.delimiter || this.detectDelimiter(csvString);
             if (!delimiter) {
-                throw new Error('Unable to detect CSV delimiter');
+                throw new Error('Unable to detect CSV delimiter. Please specify delimiter manually.');
             }
 
             // Parse CSV into rows
@@ -48,28 +51,41 @@ export class CSVToJSONConverter {
                 throw new Error('No data found in CSV');
             }
 
+            // Filter out completely empty rows if option enabled
+            const filteredRows = this.options.skipEmptyLines ? 
+                rows.filter(row => row.some(cell => cell !== null && cell !== '')) : 
+                rows;
+
+            if (filteredRows.length === 0) {
+                throw new Error('No valid data rows found');
+            }
+
             // Extract headers
             let headers;
             let dataRows;
 
             if (this.options.hasHeaders) {
-                headers = this.options.customHeaders || rows[0];
-                dataRows = rows.slice(1);
+                headers = this.options.customHeaders || filteredRows[0];
+                dataRows = filteredRows.slice(1);
             } else {
                 // Generate default headers
+                const columnCount = Math.max(...filteredRows.map(row => row.length));
                 headers = this.options.customHeaders || 
-                    Array.from({ length: rows[0].length }, (_, i) => `column${i + 1}`);
-                dataRows = rows;
+                    Array.from({ length: columnCount }, (_, i) => `column${i + 1}`);
+                dataRows = filteredRows;
             }
 
+            // Normalize row lengths (handle missing columns)
+            const normalizedRows = this.normalizeRowLengths(dataRows, headers.length);
+
             // Convert to JSON
-            const jsonData = this.rowsToJSON(headers, dataRows);
+            const jsonData = this.rowsToJSON(headers, normalizedRows);
 
             return {
                 success: true,
                 data: JSON.stringify(jsonData, null, 2),
                 parsed: jsonData,
-                rows: dataRows.length,
+                rows: normalizedRows.length,
                 columns: headers.length
             };
 
@@ -168,7 +184,7 @@ export class CSVToJSONConverter {
 
             if (char === '"') {
                 if (inQuotes && nextChar === '"') {
-                    // Escaped quote
+                    // Escaped quote (double quote)
                     currentField += '"';
                     i += 2;
                     continue;
@@ -185,6 +201,13 @@ export class CSVToJSONConverter {
                 fields.push(this.processField(currentField));
                 currentField = '';
                 i++;
+                continue;
+            }
+
+            // Handle escaped delimiters
+            if (char === '\\' && nextChar === delimiter && !inQuotes) {
+                currentField += delimiter;
+                i += 2;
                 continue;
             }
 
@@ -429,5 +452,123 @@ export class CSVToJSONConverter {
         }
         return text;
     }
+
+    /**
+     * Normalize row lengths (handle rows with missing or extra columns)
+     * @param {Array<Array>} rows - Data rows
+     * @param {number} expectedLength - Expected column count
+     * @returns {Array<Array>} - Normalized rows
+     */
+    normalizeRowLengths(rows, expectedLength) {
+        return rows.map(row => {
+            if (row.length === expectedLength) {
+                return row;
+            }
+            
+            // Pad with null if row is too short
+            if (row.length < expectedLength) {
+                return [...row, ...Array(expectedLength - row.length).fill(null)];
+            }
+            
+            // Truncate if row is too long (or keep extra columns based on option)
+            return row.slice(0, expectedLength);
+        });
+    }
+
+    /**
+     * Handle malformed CSV with error recovery
+     * @param {string} csvString - Potentially malformed CSV
+     * @param {string} delimiter - Delimiter character
+     * @returns {Array<Array>} - Parsed rows with best effort
+     */
+    parseWithRecovery(csvString, delimiter) {
+        const rows = [];
+        const lines = csvString.split(/\r?\n/);
+        let currentRow = [];
+        let currentField = '';
+        let inQuotes = false;
+
+        for (let lineNum = 0; lineNum < lines.length; lineNum++) {
+            const line = lines[lineNum];
+            
+            try {
+                const parsedLine = this.parseLine(line, delimiter);
+                
+                if (inQuotes) {
+                    // Continuation of multi-line field
+                    currentField += '\n' + line;
+                    
+                    // Check if quotes are closed
+                    if (line.includes('"')) {
+                        inQuotes = false;
+                        currentRow.push(currentField);
+                        rows.push(currentRow);
+                        currentRow = [];
+                        currentField = '';
+                    }
+                } else {
+                    rows.push(parsedLine);
+                }
+            } catch (error) {
+                // Recovery: skip malformed line or add as single field
+                console.warn(`Warning: Malformed line ${lineNum + 1}, attempting recovery`);
+                if (currentRow.length > 0) {
+                    rows.push(currentRow);
+                    currentRow = [];
+                }
+            }
+        }
+
+        return rows;
+    }
+
+    /**
+     * Handle trailing commas in CSV
+     * @param {Array} row - Parsed row
+     * @returns {Array} - Cleaned row
+     */
+    cleanTrailingCommas(row) {
+        // Remove trailing null/empty values
+        while (row.length > 0 && (row[row.length - 1] === null || row[row.length - 1] === '')) {
+            row.pop();
+        }
+        return row;
+    }
+
+    /**
+     * Convert CSV with large file support (streaming simulation)
+     * @param {string} csvString - CSV content
+     * @param {Function} progressCallback - Progress callback
+     * @returns {Object} - Conversion result
+     */
+    convertLarge(csvString, progressCallback = null) {
+        const chunkSize = 1000; // Process 1000 rows at a time
+        const delimiter = this.options.delimiter || this.detectDelimiter(csvString);
+        const allRows = this.parseCSV(csvString, delimiter);
+        
+        const headers = this.options.hasHeaders ? allRows[0] : 
+            Array.from({ length: allRows[0].length }, (_, i) => `column${i + 1}`);
+        
+        const dataRows = this.options.hasHeaders ? allRows.slice(1) : allRows;
+        const result = [];
+        
+        for (let i = 0; i < dataRows.length; i += chunkSize) {
+            const chunk = dataRows.slice(i, Math.min(i + chunkSize, dataRows.length));
+            const chunkJSON = this.rowsToJSON(headers, chunk);
+            result.push(...chunkJSON);
+            
+            if (progressCallback) {
+                progressCallback(Math.min(i + chunkSize, dataRows.length), dataRows.length);
+            }
+        }
+        
+        return {
+            success: true,
+            data: JSON.stringify(result, null, 2),
+            parsed: result,
+            rows: result.length
+        };
+    }
 }
+
 
