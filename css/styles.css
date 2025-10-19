@@ -469,13 +469,38 @@ header h1 {
 
 .preview-output {
     max-height: 500px;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
     padding: var(--spacing-md);
     background: var(--background);
     border-radius: var(--radius-md);
     font-family: var(--font-mono);
     font-size: 0.875rem;
     line-height: 1.5;
+}
+
+/* Make tables horizontally scrollable without wrapping */
+.preview-output table {
+    width: auto;                 /* allow table to size to content */
+    min-width: max-content;      /* ensure table can exceed container width */
+    table-layout: auto;          /* let content define column widths */
+}
+
+.preview-output th,
+.preview-output td {
+    white-space: nowrap;         /* prevent cell wrapping */
+}
+
+/* Optional explicit scroll wrapper for tables, if used */
+.table-scroll-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+}
+
+/* Improve scrollbar contrast in dark mode */
+body.dark-mode .preview-output {
+    scrollbar-color: var(--border) transparent;
 }
 
 /* ========================================

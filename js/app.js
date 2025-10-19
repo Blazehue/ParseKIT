@@ -735,7 +735,8 @@ class ParseKIT {
 
         const delimiter = this.jsonToCsv.options.delimiter;
         const table = document.createElement('table');
-        table.style.width = '100%';
+    // allow table to size to content; scrolling handled by CSS on container
+    table.style.width = 'auto';
         table.style.borderCollapse = 'collapse';
         table.style.fontSize = '0.85rem';
 
@@ -770,7 +771,8 @@ class ParseKIT {
     displayJSONTable(container, jsonData) {
         if (Array.isArray(jsonData) && jsonData.length > 0) {
             const table = document.createElement('table');
-            table.style.width = '100%';
+            // allow table to size to content; scrolling handled by CSS on container
+            table.style.width = 'auto';
             table.style.borderCollapse = 'collapse';
             table.style.fontSize = '0.85rem';
 
