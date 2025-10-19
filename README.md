@@ -195,7 +195,7 @@ MIT License - Feel free to use for personal or commercial projects
 
 ## 👨‍💻 Author
 
-Built with ❤️ for developers by the ParseKIT team
+Built with ❤️ for developers by me!
 
 ## 🔗 Links
 
