@@ -14,6 +14,11 @@ export class CSVToJSONConverter {
             parseNulls: options.parseNulls !== false,
             outputFormat: options.outputFormat || 'array', // 'array' or 'object'
             customHeaders: options.customHeaders || null,
+            headerMapping: options.headerMapping || null, // Map headers to different names
+            skipEmptyLines: options.skipEmptyLines !== false,
+            encoding: options.encoding || 'utf-8',
+            columnTypes: options.columnTypes || {}, // Specify types per column
+            nestedOutput: options.nestedOutput || false, // Create nested objects from dot notation
             ...options
         };
     }
@@ -234,13 +239,31 @@ export class CSVToJSONConverter {
     rowsToJSON(headers, rows) {
         const result = [];
 
+        // Apply header mapping if provided
+        const mappedHeaders = headers.map(header => 
+            this.options.headerMapping && this.options.headerMapping[header] 
+                ? this.options.headerMapping[header] 
+                : header
+        );
+
         for (const row of rows) {
             const obj = {};
             
-            for (let i = 0; i < headers.length; i++) {
-                const header = headers[i];
-                const value = i < row.length ? row[i] : null;
-                obj[header] = value;
+            for (let i = 0; i < mappedHeaders.length; i++) {
+                const header = mappedHeaders[i];
+                let value = i < row.length ? row[i] : null;
+
+                // Apply column-specific type conversion
+                if (this.options.columnTypes[headers[i]]) {
+                    value = this.convertToType(value, this.options.columnTypes[headers[i]]);
+                }
+
+                // Handle nested output (dot notation to nested objects)
+                if (this.options.nestedOutput && header.includes('.')) {
+                    this.setNestedValue(obj, header, value);
+                } else {
+                    obj[header] = value;
+                }
             }
 
             result.push(obj);
@@ -266,4 +289,145 @@ export class CSVToJSONConverter {
     updateOptions(options) {
         this.options = { ...this.options, ...options };
     }
+
+    /**
+     * Convert value to specific type
+     * @param {any} value - Value to convert
+     * @param {string} type - Target type ('string', 'number', 'boolean', 'date')
+     * @returns {any} - Converted value
+     */
+    convertToType(value, type) {
+        if (value === null || value === undefined) return null;
+
+        switch (type.toLowerCase()) {
+            case 'string':
+                return String(value);
+            case 'number':
+                const num = Number(value);
+                return isNaN(num) ? null : num;
+            case 'boolean':
+                if (typeof value === 'boolean') return value;
+                const lower = String(value).toLowerCase();
+                if (lower === 'true' || lower === '1' || lower === 'yes') return true;
+                if (lower === 'false' || lower === '0' || lower === 'no') return false;
+                return null;
+            case 'date':
+                const date = new Date(value);
+                return isNaN(date.getTime()) ? null : date.toISOString();
+            default:
+                return value;
+        }
+    }
+
+    /**
+     * Set nested value in object using dot notation
+     * @param {Object} obj - Target object
+     * @param {string} path - Dot notation path
+     * @param {any} value - Value to set
+     */
+    setNestedValue(obj, path, value) {
+        const keys = path.split('.');
+        let current = obj;
+
+        for (let i = 0; i < keys.length - 1; i++) {
+            const key = keys[i];
+            if (!current[key] || typeof current[key] !== 'object') {
+                current[key] = {};
+            }
+            current = current[key];
+        }
+
+        current[keys[keys.length - 1]] = value;
+    }
+
+    /**
+     * Handle multi-line fields (fields with newlines inside quotes)
+     * @param {string} csvString - CSV content
+     * @param {string} delimiter - Delimiter character
+     * @returns {Array<string>} - Lines with multi-line fields preserved
+     */
+    handleMultiLineFields(csvString, delimiter) {
+        const result = [];
+        let currentLine = '';
+        let inQuotes = false;
+
+        for (let char of csvString) {
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            }
+            
+            if (char === '\n' && !inQuotes) {
+                if (currentLine.trim().length > 0) {
+                    result.push(currentLine);
+                }
+                currentLine = '';
+            } else {
+                currentLine += char;
+            }
+        }
+
+        // Add last line
+        if (currentLine.trim().length > 0) {
+            result.push(currentLine);
+        }
+
+        return result;
+    }
+
+    /**
+     * Infer column types from data
+     * @param {Array<Array>} rows - Data rows
+     * @returns {Object} - Inferred types per column
+     */
+    inferColumnTypes(rows) {
+        if (rows.length === 0) return {};
+
+        const columnCount = rows[0].length;
+        const types = {};
+
+        for (let colIndex = 0; colIndex < columnCount; colIndex++) {
+            const values = rows.map(row => row[colIndex]).filter(v => v !== null && v !== '');
+            
+            if (values.length === 0) {
+                types[colIndex] = 'string';
+                continue;
+            }
+
+            // Check if all values are numbers
+            if (values.every(v => !isNaN(Number(v)))) {
+                types[colIndex] = 'number';
+                continue;
+            }
+
+            // Check if all values are booleans
+            const boolValues = values.map(v => String(v).toLowerCase());
+            if (boolValues.every(v => ['true', 'false', '1', '0', 'yes', 'no'].includes(v))) {
+                types[colIndex] = 'boolean';
+                continue;
+            }
+
+            // Check if all values are dates
+            if (values.every(v => !isNaN(new Date(v).getTime()))) {
+                types[colIndex] = 'date';
+                continue;
+            }
+
+            types[colIndex] = 'string';
+        }
+
+        return types;
+    }
+
+    /**
+     * Remove BOM (Byte Order Mark) if present
+     * @param {string} text - Text content
+     * @returns {string} - Text without BOM
+     */
+    removeBOM(text) {
+        if (text.charCodeAt(0) === 0xFEFF) {
+            return text.slice(1);
+        }
+        return text;
+    }
 }
+
