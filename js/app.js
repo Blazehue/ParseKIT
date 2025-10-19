@@ -108,6 +108,14 @@ class ParseKIT {
                 this.switchPreviewMode(tab.dataset.tab);
             });
         });
+
+            // Copy output
+            const copyBtn = document.getElementById('copyOutput');
+            copyBtn?.addEventListener('click', () => this.copyToClipboard());
+
+            // Download output
+            const downloadBtn = document.getElementById('downloadOutput');
+            downloadBtn?.addEventListener('click', () => this.downloadOutput());
     }
 
     /**
@@ -651,6 +659,94 @@ class ParseKIT {
             }, 300);
         }, 3000);
     }
+
+        /**
+         * Copy output to clipboard
+         */
+        async copyToClipboard() {
+            if (!this.currentOutput || !this.currentOutput.data) {
+                this.showToast('No output to copy', 'warning');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(this.currentOutput.data);
+                this.showToast('Copied to clipboard!', 'success');
+            } catch (error) {
+                // Fallback for older browsers
+                this.fallbackCopyToClipboard(this.currentOutput.data);
+            }
+        }
+
+        /**
+         * Fallback copy to clipboard method
+         * @param {string} text - Text to copy
+         */
+        fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+        
+            try {
+                document.execCommand('copy');
+                this.showToast('Copied to clipboard!', 'success');
+            } catch (error) {
+                this.showToast('Failed to copy to clipboard', 'error');
+            }
+        
+            document.body.removeChild(textArea);
+        }
+
+        /**
+         * Download output file
+         */
+        downloadOutput() {
+            if (!this.currentOutput || !this.currentOutput.data) {
+                this.showToast('No output to download', 'warning');
+                return;
+            }
+
+            // Determine file extension and MIME type
+            const extension = this.currentMode === 'json-to-csv' ? 'csv' : 'json';
+            const mimeType = this.currentMode === 'json-to-csv' ? 'text/csv' : 'application/json';
+        
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `converted_${timestamp}.${extension}`;
+
+            // Create blob and download
+            this.downloadFile(this.currentOutput.data, filename, mimeType);
+        
+            this.showToast(`Downloaded ${filename}`, 'success');
+        }
+
+        /**
+         * Download file using Blob
+         * @param {string} content - File content
+         * @param {string} filename - File name
+         * @param {string} mimeType - MIME type
+         */
+        downloadFile(content, filename, mimeType) {
+            // Create Blob
+            const blob = new Blob([content], { type: mimeType });
+        
+            // Create download link
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+        
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+        
+            // Cleanup
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
 }
 
 // Initialize app when DOM is ready
