@@ -200,7 +200,7 @@ Built with ❤️ for developers by me!
 ## 🔗 Links
 
 - GitHub Repository: [Blazehue/ParseKIT](https://github.com/Blazehue/ParseKIT)
-- Live Demo: (Add your deployment URL here)
+- Live Demo: [(Add your deployment URL here)](https://parse-kit.vercel.app/)
 
 ## 📚 Resources
 
