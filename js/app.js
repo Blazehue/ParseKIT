@@ -414,30 +414,92 @@ class ParseKIT {
             return;
         }
 
-        // Perform conversion
-        let result;
-        
-        if (this.currentMode === 'json-to-csv') {
-            result = this.jsonToCsv.convert(content);
-        } else {
-            result = this.csvToJson.convert(content);
-        }
+            try {
+                // Show loading
+                this.showLoading(true);
 
-        if (result.success) {
-            this.currentOutput = result;
-            this.displayOutput(result);
-            this.showToast(`Conversion successful! ${result.rows} rows processed.`, 'success');
+                // Perform conversion
+                let result;
             
+                if (this.currentMode === 'json-to-csv') {
+                    result = this.jsonToCsv.convert(content);
+                } else {
+                    result = this.csvToJson.convert(content);
+                }
+
+                // Hide loading
+                this.showLoading(false);
+
+                if (result.success) {
+                    this.currentOutput = result;
+                    this.displayOutput(result);
+                    this.showToast(`Conversion successful! ${result.rows} rows processed.`, 'success');
+                
+                    // Update status
+                    const statusEl = document.getElementById('conversionStatus');
+                    if (statusEl) {
+                        statusEl.textContent = `✓ Converted ${result.rows} rows, ${result.columns || 0} columns`;
+                        statusEl.style.color = 'var(--success)';
+                    }
+                } else {
+                    this.handleConversionError(result.error);
+            }
+            } catch (error) {
+                this.showLoading(false);
+                this.handleConversionError(error.message || 'Unknown error occurred');
+                console.error('Conversion error:', error);
+        }
+    }
+
+        /**
+         * Handle conversion errors
+         * @param {string} errorMessage - Error message
+         */
+        handleConversionError(errorMessage) {
+            // Categorize error and provide helpful messages
+            let userMessage = errorMessage;
+            let helpText = '';
+
+            if (errorMessage.includes('JSON') && errorMessage.includes('position')) {
+                helpText = 'Check your JSON syntax. Look for missing commas, brackets, or quotes.';
+            } else if (errorMessage.includes('circular')) {
+                helpText = 'Your data contains circular references which cannot be converted.';
+            } else if (errorMessage.includes('delimiter')) {
+                helpText = 'Unable to detect CSV delimiter. Try setting it manually in settings.';
+            } else if (errorMessage.includes('empty')) {
+                helpText = 'The input appears to be empty. Please provide valid data.';
+            }
+
+            this.showToast(`Conversion failed: ${userMessage}`, 'error');
+        
+            if (helpText) {
+                setTimeout(() => {
+                    this.showToast(helpText, 'info');
+                }, 500);
+            }
+
             // Update status
             const statusEl = document.getElementById('conversionStatus');
             if (statusEl) {
-                statusEl.textContent = `✓ Converted ${result.rows} rows, ${result.columns || 0} columns`;
-                statusEl.style.color = 'var(--success)';
+                statusEl.textContent = `✗ Conversion failed`;
+                statusEl.style.color = 'var(--error)';
             }
-        } else {
-            this.showToast(`Conversion failed: ${result.error}`, 'error');
         }
-    }
+
+        /**
+         * Show/hide loading spinner
+         * @param {boolean} show - Whether to show spinner
+         */
+        showLoading(show) {
+            const spinner = document.getElementById('loadingSpinner');
+            if (spinner) {
+                if (show) {
+                    spinner.classList.remove('hidden');
+                } else {
+                    spinner.classList.add('hidden');
+                }
+            }
+        }
 
     /**
      * Display output in preview area
