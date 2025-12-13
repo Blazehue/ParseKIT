@@ -1,4 +1,4 @@
-# ParseKIT - JSON/CSV Converter.
+# ParseKIT - JSON/CSV Converter
 
 A lightweight, fast, and modern web-based tool for converting between JSON and CSV formats with bidirectional conversion capabilities, file upload/download, live preview, and validation.
 
